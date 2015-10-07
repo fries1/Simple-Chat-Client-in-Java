@@ -3,15 +3,18 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 public class SimpleChatClient {
 
 	JTextField outgoing;
 	JTextArea incoming;
 	PrintWriter writer;
+	ObjectOutputStream oos;
 	Socket sock;
 	static String ip = "127.0.0.1";
 	static int port = 5000;
+	static String userName = "unknown";
 	
 	JFrame frame;
 	
@@ -59,21 +62,33 @@ public class SimpleChatClient {
 		// assign the PrintWriter to writer instance variable
 		try {
 			sock = new Socket(ip, port);
-			writer = new PrintWriter(sock.getOutputStream());
+			//writer = new PrintWriter(sock.getOutputStream());
+			UserData user = new UserData(userName);
+			oos = new ObjectOutputStream(sock.getOutputStream());
+			oos.writeObject(user);
 		} catch(Exception ex) {
 			ex.printStackTrace();
 		}
+		//sendUserInfo();
+	}
+	
+	/*
+	public void sendUserInfo() {
+		UserData user = new UserData(userName);
 		
 	}
+	*/
 	
 	public class SendButtonListener implements ActionListener {
 		public void actionPerformed(ActionEvent ev) {
 			// get the text from the text field and
 			// send it to the server using the writer (a PrintWriter)
 			String message = outgoing.getText();
+			Message newMessage = new Message(userName, message);
 			try {
-				writer.println(message);
-				writer.flush();
+				oos.writeObject(newMessage);
+				//writer.println(message);
+				//writer.flush();
 				System.out.println("client sending " + message);
 			}catch(Exception ex){
 				ex.printStackTrace();
@@ -102,14 +117,43 @@ public class SimpleChatClient {
 	}
 
 	public static void main(String[] args) {
-		if(args.length >= 0){
+		Scanner sc = new Scanner(System.in);
+		if(args.length == 2){
+			//System.out.println("found arguments");
 			ip = args[0];
 			port = Integer.parseInt(args[1]);
-			System.out.println(port);
+		}else if(args.length == 3){
+			userName = args[2];
+		}else{
+
+			System.out.println("Server IP needed: ");
+			ip = sc.next();
+			System.out.println("Port needed: ");
+			port = sc.nextInt();
 		}
+		if(userName.equals("unknown")){
+			System.out.println("Insert Username: ");
+			userName = sc.next();
+		}
+		sc.close();
 		SimpleChatClient client = new SimpleChatClient();
 		client.go();
-
 	}
 
+}
+
+class UserData implements Serializable{
+	String userName;
+	public UserData(String userName){
+		this.userName = userName;
+	}
+}
+
+class Message implements Serializable{
+	String userName;
+	String message;
+	public Message(String userName, String msg){
+		this.userName = userName;
+		message = msg;
+	}
 }
