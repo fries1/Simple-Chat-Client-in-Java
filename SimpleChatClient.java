@@ -9,6 +9,7 @@ public class SimpleChatClient {
 
 	JTextField outgoing;
 	JTextArea incoming;
+	JTextArea whosOnline;
 	PrintWriter writer;
 	ObjectOutputStream oos;
 	Socket sock;
@@ -32,8 +33,15 @@ public class SimpleChatClient {
 		incoming.setLineWrap(true);
 		incoming.setWrapStyleWord(true);
 		incoming.setEditable(false);
-		
+				
 		JScrollPane iScroller = new JScrollPane(incoming);
+		iScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		iScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+		
+		whosOnline = new JTextArea(5, 15);
+		whosOnline.setEditable(false);
+		
+		JScrollPane whoScroller = new JScrollPane(whosOnline);
 		iScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		iScroller.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		
@@ -42,6 +50,9 @@ public class SimpleChatClient {
 		mainPanel.add(iScroller);
 		mainPanel.add(outgoing);
 		mainPanel.add(sendButton);
+		mainPanel.add(whosOnline);
+		
+		
 		
 		
 		frame.getContentPane().add(BorderLayout.CENTER, mainPanel);
@@ -102,7 +113,17 @@ public class SimpleChatClient {
 	public class IncomingReader implements Runnable {
 		public void run() {
 			try {
-			
+				ObjectInputStream ois = new ObjectInputStream(sock.getInputStream());
+				Object obj;
+				while((obj = (Object) ois.readObject()) != null){
+					System.out.print("received an object");
+					if(obj instanceof Message){
+						System.out.println(" of kind Message");
+						Message m = (Message) obj;
+						incoming.append(m.userName + " " + m.message + "\n");
+					}
+				}
+				/*
 				InputStreamReader inStream = new InputStreamReader(sock.getInputStream());
 				BufferedReader reader = new BufferedReader(inStream);
 				String line;
@@ -110,6 +131,7 @@ public class SimpleChatClient {
 					System.out.println("received " + line);
 					incoming.append(line + "\n");
 				}
+				*/
 			}catch (Exception ex) {
 				ex.printStackTrace();
 			}
